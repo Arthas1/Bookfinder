@@ -61,7 +61,7 @@ public class BookFinderApi {
     private String q;
 
     //QUERY BINDING
-    private  String isbnByUser;
+    private String isbnByUser;
     private String queryByUser;
     private String categoryByUser;
     private String pathByUser;
@@ -74,65 +74,70 @@ public class BookFinderApi {
     private String tempObject;
     int iter = 0;
     private int counter;
+    private String temporary;
+    private String chainResponse;
+    private int checkForIndonesiaQuery;
+    boolean matterExists = false;
 
     @Autowired
     public void api() throws IOException {
 
 
-        Map<String, Double> rating = new HashMap<String, Double>();
+    }
 
-        // PATH FROM USER OR PREDEFINED
+    @GetMapping("api/book")
+    public String findByIsbnMapping(@RequestParam String is, String p) {
+        isbnByUser = is;
+        pathByUser = p;
+        processingFile();
+        response();
+        return finalJson;
+    }
+
+    @GetMapping("api/category")
+    public String findByCategoryMapping(@RequestParam String c, String p) {
+
+        categoryByUser = c;
+        pathByUser = p;
+        processingFile();
+        response();
+        return finalJson;
+    }
+
+    @GetMapping("api/search")
+    public String findByQueryMapping(@RequestParam String q, String p) {
+        queryByUser = q;
+        pathByUser = p;
+        processingFile();
+        response();
+        return finalJson;
+    }
+
+    @GetMapping("api/rating")
+    public void findByRatingMapping() {
+    }
+
+    public String response() {
+        counter = 0;
+        if (chain != null) {
+            finalJson = chain.replaceAll("\\\\\"", "").replace("}{", "},{");
+        } else {
+            finalJson = "No result found";
+        }
+        return finalJson;
+    }
+
+    // READING & PROCESSING JSON FILE  ----------------------------------------------------------------------------------------
+
+    public String processingFile() {
+
+// path for file
+        System.out.println(pathByUser);
 
         if (pathByUser == null) {
 
             pathByUser = "src/main/resources/public/books.json";
         }
-    }
-
-    @GetMapping("api/book")
-    public String findByIsbnMapping(@RequestParam String is) {
-        isbnByUser=is;
-        System.out.println("Na wejsciu z URL ----------------" + isbnByUser);
-        processingFile();
-        if (chain!=null) {  finalJson = chain.replaceAll("\\\\\"", ""); } else { chain = " No results";}
-        chain=finalJson;
-        return chain;
-    }
-
-    @GetMapping("api/category")
-    public String findByCategoryMapping(@RequestParam String c) {
-        categoryByUser = c.toString();
-        processingFile();
-
-      if (chain!=null) {  finalJson = chain.replaceAll("\\\\\"", ""); } else { chain = " No results";}
-chain=finalJson;
-        return chain;
-    }
-
-    @GetMapping("api/search")
-    public String findByQueryMapping(@RequestParam String q) {
-        queryByUser = q;
-        processingFile();
-        if (chain!=null) {  finalJson = chain.replaceAll("\\\\\"", ""); } else { chain = " No results";}
-        chain=finalJson;
-        return chain;
-
-    }
-
-    @GetMapping("api/rating")
-    public void findByRatingMapping() {
-
-
-    }
-
-    // READING JSON FILE
-
-    public String processingFile() {
-
-        System.out.println("is na poczatku metody processing -----"+ is);
-        System.out.println("ISBN na poczatku metody processing -----"+ isbnByUser);
-        System.out.println("c na poczatku metody processing -----"+ is);
-        System.out.println("categoryByuser na poczatku metody processing -----"+ categoryByUser);
 
         FileInputStream fileInputStream = null;
 
@@ -160,17 +165,17 @@ chain=finalJson;
             jsonFileInString = sb.toString();
 
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            System.out.println("File not found");
         }
 
 // JSON FILE - FINDING volumeInfo FOR STREAM
+
 
         JsonObject jsonObject = new JsonParser().parse(jsonFileInString).getAsJsonObject();
 
         JsonArray itemsJsonArray = jsonObject.getAsJsonArray("items");
 
         int size = itemsJsonArray.size();
-
 
         for (int i = 0; i < size; i++) {
 
@@ -184,7 +189,7 @@ chain=finalJson;
 
             categoriesJsonArray = s.getAsJsonArray("categories");
 
-// COMPOSE BOOK REPRESENTATION
+// COMPOSE BOOK REPRESENTATION ------------------------------------------------
 
             try {
                 int isbnSize = isbnJsonArray.size();
@@ -197,7 +202,6 @@ chain=finalJson;
                     isbnJ = new String(identifierList.get("identifier").toString());
 
                     isbnArray.add(isbnJ);
-
                 }
 
             } catch (Exception ne1) {
@@ -269,16 +273,7 @@ chain=finalJson;
             volumeFormatted = new VolumeInfo(isbnArray, title, subtitle, publisher, publishedDate, description, pageCount,
                     thumbnailUrl, language, previewLink, averageRating, authorsArray, categoriesArray);
 
-
-// PERFORMING REQUESTS
-
-          //  categoryByUser = "Indonesia";
-           // this.isbnByUser=isbnByUser;
-          // isbnByUser="9780226";
-           // queryByUser="IndoNesia";
-
-         //   System.out.println("ISBN BY USER Przed streamem" + isbnByUser);
-            System.out.println("CATEGORY BY USER Przed streamem" + categoryByUser);
+// PERFORMING REQUESTS ------------------------------------------------
 
             if (isbnByUser != null) {
                 findByIsbn();
@@ -301,73 +296,80 @@ chain=finalJson;
 
             if (optStringStream != null && optStringStream.size() > 0) {
 
-                System.out.println("DO PARSOWANIA --------------" +" numer " + counter + " --" + optStringStream );
                 Gson gson = new Gson();
 
                 for (int inj = 0; inj < optStringStream.size(); inj++) {
-
+                    counter++;
                     chainPart = gson.toJson(optStringStream.get(inj));
-                   if (tempObject!=null){ objectToSave = tempObject + chainPart ; } else {objectToSave= chainPart;}
+                    if (tempObject != null) {
+                        objectToSave = tempObject + chainPart;
+                    } else {
+                        objectToSave = chainPart;
+                    }
                     tempObject = objectToSave;
                 }
             }
-
         }
-        chain = tempObject;
-        tempObject=null;
+        // check if Json should be clamped because of multiple parts;
+        if (counter > 1) {
+            chain = "[" + tempObject + "]";
+        } else {
+            chain = tempObject;
+        }
+        tempObject = null;
+        counter = 0;
+
+        queryByUser=null;
+        categoryByUser=null;
+        isbnByUser=null;
+
         return chain;
     }
 
+    // STREAM OPERATIONS  ------------------------------------------------
 
     private List<VolumeInfo> findByIsbn() {
-        System.out.println(" W Stream - find by user =" + isbnByUser);
 
         try {
             Stream<VolumeInfo> streamOfBookData = Stream.of(volumeFormatted);
-            optStringStream = streamOfBookData.filter(VolumeInfo -> VolumeInfo.getIsbns().toString().contains(isbnByUser)).sorted().collect(Collectors.toList());
+            optStringStream = streamOfBookData.filter(VolumeInfo -> VolumeInfo.getIsbns().toString()
+                    .contains(isbnByUser))
+                    .sorted().collect(Collectors.toList());
             if (optStringStream.size() > 0) {
-                System.out.println("Na wyjsciu z Isbn " + optStringStream.toString());
-
                 return optStringStream;
-
             }
         } catch (Exception e) {
-            System.out.println("No results");
-        }
+                   }
         return null;
     }
-
 
     private List<VolumeInfo> findByCategory() {
-       // System.out.println(" W Stream - find by Categories =" + categoryByUser);
 
         try {
             Stream<VolumeInfo> streamOfBookData = Stream.of(volumeFormatted);
-            optStringStream = streamOfBookData.filter(VolumeInfo -> VolumeInfo.getCategories().toString().contains(categoryByUser))
+            optStringStream = streamOfBookData.filter(VolumeInfo -> VolumeInfo.getCategories().toString()
+                    .contains(categoryByUser))
                     .sorted().collect(Collectors.toList());
-            if (optStringStream.size() != 0) {
-           //     System.out.println("Na wyjsciu z Category " + optStringStream.toString());
-                counter++;
-
+            if (optStringStream.size() > 0) {
                 return optStringStream;
             }
         } catch (Exception e) {
-        }
+                  }
         return null;
     }
-
 
     private List<VolumeInfo> findByQuery() {
         try {
             Stream<VolumeInfo> streamOfBookData = Stream.of(volumeFormatted);
-            optStringStream = streamOfBookData.filter(VolumeInfo -> VolumeInfo.toString().toLowerCase().contains(queryByUserToLowerCase))
+            optStringStream = streamOfBookData.filter(VolumeInfo -> VolumeInfo.toString().toLowerCase()
+                    .contains(queryByUserToLowerCase))
                     .sorted().collect(Collectors.toList());
             if (optStringStream.size() > 0) {
 
                 return optStringStream;
             }
         } catch (Exception e) {
-        }
+              }
         return null;
     }
 

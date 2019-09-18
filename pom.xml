@@ -10,10 +10,10 @@
 	</parent>
 	<groupId>com.cogni.homework</groupId>
 	<artifactId>bookfinder</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0-SNAPSHOT</version>
 	<name>bookfinder</name>
 	<description>project</description>
-
+<packaging>war</packaging>
 	<properties>
 		<java.version>1.8</java.version>
 	</properties>
