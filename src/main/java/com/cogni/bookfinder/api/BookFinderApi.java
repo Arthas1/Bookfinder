@@ -32,7 +32,6 @@ public class BookFinderApi {
     private String previewLink;
     private double averageRating;
 
-    private JsonObject volumeDataCompacted;
     private JsonArray isbnJsonArray;
     private JsonObject s;
     private JsonArray authorsJsonArray;
@@ -52,8 +51,6 @@ public class BookFinderApi {
     private List<VolumeInfo> parsedChains;
     private CharSequence queryByUserToLowerCase;
     private Map<String, Double> rating;
-    private Double rate;
-    private String id;
 
     //BY URL
     private String is;
@@ -72,16 +69,10 @@ public class BookFinderApi {
     private String chainPart;
     private String objectToSave;
     private String tempObject;
-    int iter = 0;
     private int counter;
-    private String temporary;
-    private String chainResponse;
-    private int checkForIndonesiaQuery;
-    boolean matterExists = false;
 
     @Autowired
     public void api() throws IOException {
-
 
     }
 
@@ -319,9 +310,9 @@ public class BookFinderApi {
         tempObject = null;
         counter = 0;
 
-        queryByUser=null;
-        categoryByUser=null;
-        isbnByUser=null;
+        queryByUser = null;
+        categoryByUser = null;
+        isbnByUser = null;
 
         return chain;
     }
@@ -339,7 +330,7 @@ public class BookFinderApi {
                 return optStringStream;
             }
         } catch (Exception e) {
-                   }
+        }
         return null;
     }
 
@@ -354,7 +345,7 @@ public class BookFinderApi {
                 return optStringStream;
             }
         } catch (Exception e) {
-                  }
+        }
         return null;
     }
 
@@ -369,7 +360,7 @@ public class BookFinderApi {
                 return optStringStream;
             }
         } catch (Exception e) {
-              }
+        }
         return null;
     }
 
